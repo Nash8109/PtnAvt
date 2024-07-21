@@ -1,6 +1,6 @@
 import pytest
 import requests
-from lesson_8.Pages.Employee import Employer, Company
+from Pages.Employee import Employer, Company
 
 employer = Employer()
 company = Company()
