@@ -1,70 +1,56 @@
 import pytest
-import requests
-from Pages.Employee import Employer, Company
+from lesson_8.empl import Company
 
-employer = Employer()
-company = Company()
 
-def test_authorization(get_token):
-   token = get_token
-   assert token is not None
-   assert isinstance(token, str)
+api = Company("https://x-clients-be.onrender.com")
 
-def test_getcompany_id():
-   company_id = company.last_active_company_id()
-   assert company_id is not None
-   assert str(company_id).isdigit()
 
-def test_add_employer(get_token):
-   token = str(get_token)
-   com_id = company.last_active_company_id()
-   body_employer = {
-      "id": 0,
-      "firstName": "Natalya",
-      "lastName": "Ivanova",
-      "middleName": "string",
-      "companyId": com_id,
-      "email": "test@mail.ru",
-      "url": "string",
-      "phone": "string",
-      "birthdate": "2024-07-20T08:34:03.693Z",
-      "isActive": 'true'
-      }
-   new_employer_id = (employer.add_new(token, body_employer))['id']
-   assert new_employer_id is not None
-   assert str(new_employer_id).isdigit()
+def test_get_list_of_employees():
+    name = "SkyPro"
+    descr = "курсы"
+    company = api.create_company(name, descr)
+    new_id = company["id"]
+    employee_list = api.get_list_employee(new_id)
+    assert len(employee_list) == 0
 
-   info = employer.get_info(new_employer_id)
-   assert info.json()['id'] == new_employer_id
-   assert info.status_code == 200
 
-def test_add_employer_without_token():
-  com_id = company.last_active_company_id()
-  token = ""
-  body_employer = {
-      "id": 0,
-      "firstName": "Natalya",
-      "lastName": "Ivanova",
-      "middleName": "string",
-      "companyId": com_id,
-      "email": "test@mail.ru",
-      "url": "string",
-      "phone": "string",
-      "birthdate": "2024-07-20T08:34:03.693Z",
-      "isActive": 'true'
-      }
-  new_employer = employer.add_new(token, body_employer)
-  assert new_employer['message'] == 'Unauthorized'
+def test_add_new_employee():
+    name = "SkyPro"
+    descr = "курсы"
+    company = api.create_company(name, descr)
+    new_id = company["id"]
 
-def test_add_employer_without_body(get_token):
-   token = str(get_token)
-   com_id = company.last_active_company_id()
-   body_employer = {}
-   new_employer = employer.add_new(token, body_employer)
-   assert new_employer['message'] == 'Innternal server error'
+    new_employee = api.add_new_employee(new_id, "Mariia", "B")
+    assert new_employee["id"] > 0
 
-def test_get_employer():
-   com_id = company.last_active_company_id()
-   list_employers = employer.get_list(com_id)
-   assert isinstance(list_employers, list)
+    resp = api.get_list_employee(new_id)
+    assert resp[0]["companyId"] == new_id
+    assert resp[0]["firstName"] == "Mariia"
+    assert resp[0]["isActive"] == True
+    assert resp[0]["lastName"] == "B"
 
+
+def test_get_employee_by_id():
+    name = "SkyPro"
+    descr = "курсы"
+    company = api.create_company(name, descr)
+    new_id = company["id"]
+    new_employee = api.add_new_employee(new_id, "Mariia", "B")
+    id_employee = new_employee["id"]
+    get_info = api.get_employee_by_id(id_employee)
+    assert get_info["firstName"] == "Mariia"
+    assert get_info["lastName"] == "B"
+
+
+def test_change_employee_info():
+    name = "SkyPro"
+    descr = "курсы"
+    company = api.create_company(name, descr)
+    new_id = company["id"]
+    new_employee = api.add_new_employee(new_id, "Mariia", "B")
+    id_employee = new_employee["id"]
+
+    update = api.update_employee_info(id_employee, "B2", "tosha.rudanov@yandex.ru")
+    assert update["id"] == id_employee
+    assert update["email"] == "tosha.rudanov@yandex.ru"
+    assert update["isActive"] == True
